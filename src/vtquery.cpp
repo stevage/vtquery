@@ -134,7 +134,6 @@ struct property_value_visitor {
     Napi::Env& env;
     template <typename T>
     void operator()(T const&) {
-        //properties_obj.Set(key, val);
     }
 
     void operator()(bool v) {
@@ -434,11 +433,6 @@ struct Worker : Napi::AsyncWorker {
             }
 
             results_object.Set("features", features_array);
-
-            //auto const argc = 2u;
-            //v8::Local<v8::Value> argv[argc] = {
-            //    Nan::Null(), results_object};
-            //callback->Call(argc, static_cast<v8::Local<v8::Value>*>(argv), async_resource);
             Callback().Call({Env().Null(), results_object});
 
         } catch (std::exception const& e) {
