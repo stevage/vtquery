@@ -1,10 +1,11 @@
 #include "vtquery.hpp"
-#include <nan.h>
-// #include "your_code.hpp"
+#include <napi.h>
 
-static void init(v8::Local<v8::Object> target) {
-    // expose helloAsync method
-    Nan::SetMethod(target, "vtquery", VectorTileQuery::vtquery);
+
+Napi::Object init(Napi::Env env, Napi::Object exports)
+{
+    exports.Set(Napi::String::New(env, "vtquery"), Napi::Function::New(env, VectorTileQuery::vtquery));
+    return exports;
 }
 
-NODE_MODULE(module, init) // NOLINT
+NODE_API_MODULE(module, init) // NOLINT

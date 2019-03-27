@@ -5,7 +5,7 @@
 #include <mapbox/geometry/algorithms/closest_point.hpp>
 #include <mapbox/geometry/geometry.hpp>
 #include <mapbox/variant.hpp>
-#include <nan.h>
+#include <napi.h>
 #include <vtzero/types.hpp>
 #include <vtzero/vector_tile.hpp>
 
@@ -28,10 +28,13 @@ namespace utils {
 * when it merges
 *
 */
-inline void CallbackError(std::string message, v8::Local<v8::Function> func) {
-    Nan::Callback cb(func);
-    v8::Local<v8::Value> argv[1] = {Nan::Error(message.c_str())};
-    Nan::Call(cb, 1, argv);
+
+inline Napi::Value CallbackError(std::string const& message, Napi::CallbackInfo const& info)
+{
+    Napi::Object obj = Napi::Object::New(info.Env());
+    obj.Set("message", message);
+    auto func = info[info.Length() - 1].As<Napi::Function>();
+    return func.Call({obj});
 }
 
 /*
