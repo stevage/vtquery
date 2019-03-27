@@ -4,5 +4,4 @@
 namespace VectorTileQuery {
 
 Napi::Value vtquery(Napi::CallbackInfo const& info);
-
 }

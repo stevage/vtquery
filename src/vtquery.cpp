@@ -69,8 +69,7 @@ struct TileObject {
           x(x0),
           y(y0),
           data{buffer.Data(), buffer.Length()},
-          buffer_ref{Napi::Persistent(buffer)}
-    {
+          buffer_ref{Napi::Persistent(buffer)} {
     }
 
     // explicitly use the destructor to clean up
@@ -134,15 +133,14 @@ struct QueryData {
 struct property_value_visitor {
     Napi::Object& properties_obj;
     std::string const& key;
-    Napi::Env & env;
+    Napi::Env& env;
     template <typename T>
-    void operator()(T const&)
-    {
+    void operator()(T const&) {
         //properties_obj.Set(key, val);
     }
 
     void operator()(bool v) {
-        properties_obj.Set(key, Napi::Boolean::New(env,v));
+        properties_obj.Set(key, Napi::Boolean::New(env, v));
     }
     void operator()(uint64_t v) {
         properties_obj.Set(key, Napi::Number::New(env, v));
@@ -160,7 +158,7 @@ struct property_value_visitor {
 
 /// used to create the final v8 (JSON) object to return to the user
 void set_property(materialized_prop_type const& property,
-                  Napi::Object & properties_obj, Napi::Env env) {
+                  Napi::Object& properties_obj, Napi::Env env) {
     mapbox::util::apply_visitor(property_value_visitor{properties_obj, property.first, env}, property.second);
 }
 
@@ -248,15 +246,14 @@ bool value_is_duplicate(ResultObject const& r,
     return r.properties_vector == candidate_props_vec;
 }
 
-struct Worker : Napi::AsyncWorker
-{
+struct Worker : Napi::AsyncWorker {
     using Base = Napi::AsyncWorker;
 
     /// set up major containers
     std::unique_ptr<QueryData> query_data_;
     std::vector<ResultObject> results_queue_;
 
-    Worker(std::unique_ptr<QueryData> && query_data, Napi::Function& cb)
+    Worker(std::unique_ptr<QueryData>&& query_data, Napi::Function& cb)
         : Base(cb, "vtquery:worker"),
           query_data_(std::move(query_data)),
           results_queue_() {}
@@ -389,11 +386,10 @@ struct Worker : Napi::AsyncWorker
         }
     }
 
-    void OnOK() override
-    {
+    void OnOK() override {
         Napi::HandleScope scope(Env());
         try {
-            Napi::Object results_object =  Napi::Object::New(Env());
+            Napi::Object results_object = Napi::Object::New(Env());
             Napi::Array features_array = Napi::Array::New(Env());
             results_object.Set("type", "FeatureCollection");
 
@@ -460,12 +456,10 @@ struct Worker : Napi::AsyncWorker
     }
 };
 
-Napi::Value vtquery(Napi::CallbackInfo const& info)
-{
+Napi::Value vtquery(Napi::CallbackInfo const& info) {
     // validate callback function
     Napi::Value callback_val = info[info.Length() - 1];
-    if (!callback_val.IsFunction())
-    {
+    if (!callback_val.IsFunction()) {
         Napi::Error::New(info.Env(), "last argument must be a callback function").ThrowAsJavaScriptException();
         return info.Env().Null();
     }
@@ -473,96 +467,80 @@ Napi::Value vtquery(Napi::CallbackInfo const& info)
     Napi::Function callback = callback_val.As<Napi::Function>();
 
     // validate tiles
-    if (!info[0].IsArray())
-    {
+    if (!info[0].IsArray()) {
         return utils::CallbackError("first arg 'tiles' must be an array of tile objects", info);
     }
 
     Napi::Array tiles = info[0].As<Napi::Array>();
     unsigned num_tiles = tiles.Length();
 
-    if (num_tiles <= 0)
-    {
+    if (num_tiles <= 0) {
         return utils::CallbackError("'tiles' array must be of length greater than 0", info);
     }
 
     std::unique_ptr<QueryData> query_data = std::make_unique<QueryData>(num_tiles);
 
-    for (unsigned t = 0; t < num_tiles; ++t)
-    {
+    for (unsigned t = 0; t < num_tiles; ++t) {
         Napi::Value tile_val = tiles.Get(t);
-        if (!tile_val.IsObject())
-        {
+        if (!tile_val.IsObject()) {
             return utils::CallbackError("items in 'tiles' array must be objects", info);
         }
         Napi::Object tile_obj = tile_val.As<Napi::Object>();
 
         // check buffer value
-        if (!tile_obj.Has(Napi::String::New(info.Env(), "buffer")))
-        {
+        if (!tile_obj.Has(Napi::String::New(info.Env(), "buffer"))) {
             return utils::CallbackError("item in 'tiles' array does not include a buffer value", info);
         }
         Napi::Value buf_val = tile_obj.Get(Napi::String::New(info.Env(), "buffer"));
-        if (buf_val.IsNull() || buf_val.IsUndefined())
-        {
+        if (buf_val.IsNull() || buf_val.IsUndefined()) {
             return utils::CallbackError("buffer value in 'tiles' array item is null or undefined", info);
         }
 
         Napi::Object buffer_obj = buf_val.As<Napi::Object>();
-        if (!buffer_obj.IsBuffer())
-        {
+        if (!buffer_obj.IsBuffer()) {
             return utils::CallbackError("buffer value in 'tiles' array item is not a true buffer", info);
         }
 
         Napi::Buffer<char> buffer = buffer_obj.As<Napi::Buffer<char>>();
         // z value
-        if (!tile_obj.Has(Napi::String::New(info.Env(), "z")))
-        {
+        if (!tile_obj.Has(Napi::String::New(info.Env(), "z"))) {
             return utils::CallbackError("item in 'tiles' array does not include a 'z' value", info);
         }
         Napi::Value z_val = tile_obj.Get(Napi::String::New(info.Env(), "z"));
-        if (!z_val.IsNumber())
-        {
+        if (!z_val.IsNumber()) {
             return utils::CallbackError("'z' value in 'tiles' array item is not an int32", info);
         }
 
         int z = z_val.As<Napi::Number>().Int32Value();
-        if (z < 0)
-        {
+        if (z < 0) {
             return utils::CallbackError("'z' value must not be less than zero", info);
         }
 
         // x value
-        if (!tile_obj.Has(Napi::String::New(info.Env(), "x")))
-        {
+        if (!tile_obj.Has(Napi::String::New(info.Env(), "x"))) {
             return utils::CallbackError("item in 'tiles' array does not include a 'x' value", info);
         }
         Napi::Value x_val = tile_obj.Get(Napi::String::New(info.Env(), "x"));
-        if (!x_val.IsNumber())
-        {
+        if (!x_val.IsNumber()) {
             return utils::CallbackError("'x' value in 'tiles' array item is not an int32", info);
         }
 
         int x = x_val.As<Napi::Number>().Int32Value();
-        if (x < 0)
-        {
+        if (x < 0) {
             return utils::CallbackError("'x' value must not be less than zero", info);
         }
 
         // y value
-        if (!tile_obj.Has(Napi::String::New(info.Env(), "y")))
-        {
+        if (!tile_obj.Has(Napi::String::New(info.Env(), "y"))) {
             return utils::CallbackError("item in 'tiles' array does not include a 'y' value", info);
         }
         Napi::Value y_val = tile_obj.Get(Napi::String::New(info.Env(), "y"));
-        if (!y_val.IsNumber())
-        {
+        if (!y_val.IsNumber()) {
             return utils::CallbackError("'y' value in 'tiles' array item is not an int32", info);
         }
 
         int y = y_val.As<Napi::Number>().Int32Value();
-        if (y < 0)
-        {
+        if (y < 0) {
             return utils::CallbackError("'y' value must not be less than zero", info);
         }
 
