@@ -1,6 +1,5 @@
 #pragma once
 #include <cmath>
-#include <iostream>
 #include <mapbox/cheap_ruler.hpp>
 #include <mapbox/geometry/algorithms/closest_point.hpp>
 #include <mapbox/geometry/geometry.hpp>
@@ -35,17 +34,6 @@ inline Napi::Value CallbackError(std::string const& message, Napi::CallbackInfo 
     auto func = info[info.Length() - 1].As<Napi::Function>();
     return func.Call({obj});
 }
-
-/*
-* Print variant types
-*/
-using variant_type = mapbox::util::variant<std::string, float, double, int64_t, uint64_t, bool>;
-struct print_variant {
-    template <typename T>
-    void operator()(T const& val) const {
-        std::clog << val;
-    }
-};
 
 /*
   Convert original lng/lat coordinates into a query point relative to the "active" tile in vector tile coordinates
