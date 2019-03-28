@@ -37,24 +37,17 @@ struct ResultObject {
     std::string layer_name;
     mapbox::geometry::point<double> coordinates;
     double distance;
-    GeomType original_geometry_type;
-    bool has_id;
-    uint64_t id;
+    GeomType original_geometry_type{GeomType::unknown};
+    bool has_id{false};
+    uint64_t id{0};
 
-    ResultObject() : properties_vector(),
-                     properties_vector_materialized(),
-                     layer_name(),
-                     coordinates(0.0, 0.0),
-                     distance(std::numeric_limits<double>::max()),
-                     original_geometry_type(GeomType::unknown),
-                     has_id(false),
-                     id(0) {}
+    ResultObject() : coordinates(0.0, 0.0),
+                     distance(std::numeric_limits<double>::max()) {}
 
     ResultObject(ResultObject&&) = default;
     ResultObject& operator=(ResultObject&&) = default;
     ResultObject(ResultObject const&) = delete;
     ResultObject& operator=(ResultObject const&) = delete;
-    ~ResultObject() = default;
 };
 
 /// an intermediate representation of a tile buffer and its necessary components
@@ -97,9 +90,7 @@ struct TileObject {
 /// the baton of data to be passed from the v8 thread into the cpp threadpool
 struct QueryData {
     explicit QueryData(std::uint32_t num_tiles)
-        : tiles(),
-          layers(),
-          latitude(0.0),
+        : latitude(0.0),
           longitude(0.0),
           radius(0.0),
           num_results(5),
@@ -133,7 +124,7 @@ struct property_value_visitor {
     std::string const& key;
     Napi::Env& env;
     template <typename T>
-    void operator()(T const&) {
+    void operator()(T const& /*unused*/) {
     }
 
     void operator()(bool v) {
@@ -212,7 +203,7 @@ std::vector<vtzero::property> get_properties_vector(vtzero::feature& f) {
     std::vector<vtzero::property> v;
     v.reserve(f.num_properties());
     while (auto ii = f.next_property()) {
-        v.push_back(std::move(ii));
+        v.push_back(ii);
     }
     return v;
 }
@@ -252,8 +243,7 @@ struct Worker : Napi::AsyncWorker {
 
     Worker(std::unique_ptr<QueryData>&& query_data, Napi::Function& cb)
         : Base(cb, "vtquery:worker"),
-          query_data_(std::move(query_data)),
-          results_queue_() {}
+          query_data_(std::move(query_data)) {}
 
     void Execute() override {
         try {
@@ -344,10 +334,9 @@ struct Worker : Napi::AsyncWorker {
                                         found_duplicate = true;
                                         break;
                                         // if we have a duplicate but it's lesser than what we already have, just skip and don't add below
-                                    } else {
-                                        skip_duplicate = true;
-                                        break;
                                     }
+                                    skip_duplicate = true;
+                                    break;
                                 }
                             }
                         }
