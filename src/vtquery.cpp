@@ -108,8 +108,8 @@ struct QueryData {
     QueryData& operator=(QueryData&&) = delete;
 
     // buffers object thing
-    std::vector<std::unique_ptr<TileObject>> tiles;
-    std::vector<std::string> layers;
+    std::vector<std::unique_ptr<TileObject>> tiles{};
+    std::vector<std::string> layers{};
     double latitude;
     double longitude;
     double radius;
@@ -131,10 +131,10 @@ struct property_value_visitor {
         properties_obj.Set(key, Napi::Boolean::New(env, v));
     }
     void operator()(uint64_t v) {
-        properties_obj.Set(key, Napi::Number::New(env, v));
+        properties_obj.Set(key, Napi::Number::New(env, static_cast<double>(v)));
     }
     void operator()(int64_t v) {
-        properties_obj.Set(key, Napi::Number::New(env, v));
+        properties_obj.Set(key, Napi::Number::New(env, static_cast<double>(v)));
     }
     void operator()(double v) {
         properties_obj.Set(key, Napi::Number::New(env, v));
