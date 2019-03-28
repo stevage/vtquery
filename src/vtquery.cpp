@@ -32,9 +32,9 @@ using materialized_prop_type = std::pair<std::string, mapbox::feature::value>;
 
 /// main storage item for returning to the user
 struct ResultObject {
-    std::vector<vtzero::property> properties_vector;
-    std::vector<materialized_prop_type> properties_vector_materialized;
-    std::string layer_name;
+    std::vector<vtzero::property> properties_vector{};
+    std::vector<materialized_prop_type> properties_vector_materialized{};
+    std::string layer_name{};
     mapbox::geometry::point<double> coordinates;
     double distance;
     GeomType original_geometry_type{GeomType::unknown};
